@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JEJU DAY BY MH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #1a2e2a;
+    --paper: #f4ede0;
+    --paper-2: #ebe1cf;
+    --tangerine: #f08a3e;
+    --tangerine-deep: #d96a1c;
+    --sea: #2d6e7e;
+    --sea-deep: #1a4a57;
+    --stone: #4a4a48;
+    --leaf: #3d6b4a;
+    --shadow: rgba(26,46,42,.12);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{
+    font-family:'Noto Sans KR','Gowun Batang',serif;
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* === 배경 (제주 바다 + 한라산 + 감귤 일러스트) === */
+  .canvas-bg{
+    position:fixed; inset:0; z-index:-2; overflow:hidden;
+    background:
+      radial-gradient(ellipse at 20% 10%, #fce7c2 0%, transparent 40%),
+      radial-gradient(ellipse at 80% 90%, #c9dde0 0%, transparent 45%),
+      linear-gradient(180deg, #f6ecd6 0%, #ead9b8 60%, #d9c69f 100%);
+  }
+  .canvas-bg svg{position:absolute; inset:0; width:100%; height:100%;}
+  .grain{
+    position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.18;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
+    mix-blend-mode:multiply;
+  }
+
+  /* === 헤더 === */
+  header{
+    padding:48px 32px 24px;
+    text-align:center;
+    position:relative;
+  }
+  .kanji{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:14px;
+    letter-spacing:.4em;
+    color:var(--tangerine-deep);
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  h1{
+    font-family:'Gowun Batang',serif;
+    font-weight:700;
+    font-size:clamp(40px, 6vw, 72px);
+    letter-spacing:-0.02em;
+    line-height:1.05;
+    color:var(--ink);
+    margin-bottom:12px;
+  }
+  h1 .accent{
+    color:var(--tangerine-deep);
+    font-style:italic;
+    font-family:'Cormorant Garamond',serif;
+    font-weight:500;
+  }
+  .subtitle{
+    font-size:14px;
+    letter-spacing:.15em;
+    color:var(--stone);
+    max-width:560px;
+    margin:0 auto;
+  }
+  .divider{
+    display:flex; align-items:center; justify-content:center;
+    gap:14px; margin:28px auto 8px; max-width:300px;
+  }
+  .divider .line{flex:1; height:1px; background:var(--ink); opacity:.3;}
+  .divider .dot{width:6px; height:6px; border-radius:50%; background:var(--tangerine-deep);}
+
+  /* === 권역 선택 === */
+  .region-section{
+    max-width:1100px; margin:24px auto 40px; padding:0 32px;
+  }
+  .section-label{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:.3em;
+    color:var(--sea-deep);
+    text-transform:uppercase;
+    margin-bottom:18px;
+    text-align:center;
+  }
+  .region-grid{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
+  }
+  .region-btn{
+    background:var(--paper-2);
+    border:1px solid rgba(26,46,42,.2);
+    padding:22px 16px;
+    cursor:pointer;
+    transition:all .35s cubic-bezier(.2,.7,.3,1);
+    font-family:inherit;
+    color:var(--ink);
+    text-align:left;
+    position:relative;
+    overflow:hidden;
+  }
+  .region-btn::before{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(135deg, var(--tangerine) 0%, var(--tangerine-deep) 100%);
+    opacity:0; transition:opacity .35s;
+  }
+  .region-btn:hover{transform:translateY(-3px); box-shadow:0 12px 30px var(--shadow);}
+  .region-btn.active::before{opacity:1;}
+  .region-btn.active{color:#fff; border-color:transparent;}
+  .region-btn > *{position:relative; z-index:1;}
+  .region-num{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:14px;
+    opacity:.6;
+    display:block; margin-bottom:8px;
+  }
+  .region-name{
+    font-size:20px; font-weight:700; letter-spacing:-.01em;
+    margin-bottom:4px;
+  }
+  .region-en{
+    font-family:'Cormorant Garamond',serif;
+    font-size:12px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    opacity:.7;
+  }
+
+  /* === 일정 카드 === */
+  .schedule-wrap{
+    max-width:1100px; margin:0 auto; padding:0 32px 60px;
+  }
+  .time-card{
+    background:rgba(255,253,247,.7);
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(26,46,42,.12);
+    margin-bottom:18px;
+    padding:28px 32px;
+    position:relative;
+    overflow:hidden;
+    transition:opacity .4s, transform .4s;
+  }
+  .time-card.disabled{
+    opacity:.4; pointer-events:none;
+  }
+  .time-header{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:18px;
+    padding-bottom:14px;
+    border-bottom:1px dashed rgba(26,46,42,.25);
+  }
+  .time-title{
+    display:flex; align-items:baseline; gap:14px;
+  }
+  .time-num{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:36px;
+    color:var(--tangerine-deep);
+    line-height:1;
+  }
+  .time-name{
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .time-en{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:.25em;
+    text-transform:uppercase;
+    color:var(--stone);
+  }
+  .time-tag{
+    font-size:11px;
+    letter-spacing:.2em;
+    padding:5px 12px;
+    border:1px solid var(--ink);
+    text-transform:uppercase;
+  }
+  .time-tag.meal{background:var(--ink); color:var(--paper);}
+  .time-tag.visit{background:transparent;}
+
+  .options{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+  }
+  .option{
+    background:var(--paper);
+    border:1px solid rgba(26,46,42,.15);
+    padding:16px 14px;
+    cursor:pointer;
+    transition:all .25s;
+    font-family:inherit;
+    color:var(--ink);
+    text-align:left;
+    position:relative;
+  }
+  .option:hover{
+    border-color:var(--tangerine-deep);
+    transform:translateY(-2px);
+  }
+  .option.selected{
+    background:var(--ink);
+    color:var(--paper);
+    border-color:var(--ink);
+  }
+  .option.selected .opt-meta{color:var(--tangerine);}
+  .opt-name{
+    font-size:15px; font-weight:500; line-height:1.3;
+    margin-bottom:6px;
+  }
+  .opt-meta{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:12px;
+    color:var(--tangerine-deep);
+    letter-spacing:.05em;
+  }
+  .opt-desc{
+    font-size:11px; color:var(--stone); margin-top:6px; line-height:1.4;
+  }
+  .option.selected .opt-desc{color:rgba(244,237,224,.7);}
+
+  .empty-note{
+    font-size:13px; color:var(--stone); text-align:center; padding:30px 0;
+    font-style:italic;
+  }
+
+  /* === 결과 서머리 === */
+  .summary{
+    max-width:1100px; margin:0 auto 80px; padding:0 32px;
+  }
+  .summary-card{
+    background:var(--ink);
+    color:var(--paper);
+    padding:48px 40px;
+    position:relative;
+    overflow:hidden;
+  }
+  .summary-card::before{
+    content:''; position:absolute; top:-50px; right:-50px;
+    width:200px; height:200px;
+    background:radial-gradient(circle, var(--tangerine) 0%, transparent 70%);
+    opacity:.4;
+  }
+  .summary-card::after{
+    content:''; position:absolute; bottom:-80px; left:-50px;
+    width:240px; height:240px;
+    background:radial-gradient(circle, var(--sea) 0%, transparent 70%);
+    opacity:.5;
+  }
+  .summary-head{
+    position:relative; z-index:1;
+    border-bottom:1px solid rgba(244,237,224,.25);
+    padding-bottom:20px; margin-bottom:28px;
+  }
+  .summary-kanji{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    letter-spacing:.4em;
+    font-size:12px;
+    color:var(--tangerine);
+    text-transform:uppercase;
+    margin-bottom:8px;
+  }
+  .summary-title{
+    font-family:'Gowun Batang',serif;
+    font-size:34px; font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .summary-region{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:18px;
+    color:var(--tangerine);
+    margin-top:6px;
+  }
+
+  .timeline{
+    position:relative; z-index:1;
+    display:grid; gap:18px;
+  }
+  .tl-item{
+    display:grid; grid-template-columns:90px 1fr auto; gap:24px;
+    align-items:baseline;
+    padding:12px 0;
+    border-bottom:1px dotted rgba(244,237,224,.2);
+  }
+  .tl-time{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:20px;
+    color:var(--tangerine);
+    letter-spacing:.05em;
+  }
+  .tl-content{
+    font-size:16px;
+  }
+  .tl-name{font-weight:500; margin-bottom:3px;}
+  .tl-desc{font-size:12px; color:rgba(244,237,224,.6);}
+  .tl-tag{
+    font-size:10px; letter-spacing:.2em;
+    padding:3px 8px; border:1px solid rgba(244,237,224,.3);
+    text-transform:uppercase;
+  }
+  .summary-empty{
+    position:relative; z-index:1;
+    text-align:center; padding:30px 0;
+    font-style:italic; color:rgba(244,237,224,.6);
+    font-size:14px;
+  }
+  .summary-footer{
+    position:relative; z-index:1;
+    margin-top:28px; padding-top:20px;
+    border-top:1px solid rgba(244,237,224,.25);
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap:wrap; gap:12px;
+  }
+  .reset-btn{
+    background:transparent;
+    color:var(--paper);
+    border:1px solid var(--paper);
+    padding:10px 22px;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all .25s;
+  }
+  .reset-btn:hover{background:var(--tangerine-deep); border-color:var(--tangerine-deep);}
+  .progress{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:13px;
+    letter-spacing:.15em;
+    color:rgba(244,237,224,.7);
+  }
+  .progress strong{color:var(--tangerine); font-size:18px;}
+
+  footer{
+    text-align:center; padding:30px;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:12px;
+    letter-spacing:.3em;
+    color:var(--stone);
+    text-transform:uppercase;
+  }
+
+  /* 반응형 */
+  @media (max-width:780px){
+    .region-grid{grid-template-columns:repeat(2,1fr);}
+    .options{grid-template-columns:repeat(2,1fr);}
+    .tl-item{grid-template-columns:70px 1fr; gap:14px;}
+    .tl-tag{grid-column:2; justify-self:start; margin-top:4px;}
+    h1{font-size:42px;}
+    .time-card,.summary-card{padding:24px 20px;}
+  }
+
+  /* 페이드 인 */
+  @keyframes fadeUp{
+    from{opacity:0; transform:translateY(20px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  .time-card{animation:fadeUp .5s both;}
+  .time-card:nth-child(1){animation-delay:.05s;}
+  .time-card:nth-child(2){animation-delay:.1s;}
+  .time-card:nth-child(3){animation-delay:.15s;}
+  .time-card:nth-child(4){animation-delay:.2s;}
+  .time-card:nth-child(5){animation-delay:.25s;}
+  .time-card:nth-child(6){animation-delay:.3s;}
+</style>
+</head>
+<body>
+
+<!-- 배경: 제주 풍경 SVG -->
+<div class="canvas-bg" aria-hidden="true">
+  <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice">
+    <!-- 한라산 실루엣 -->
+    <path d="M0,560 Q200,520 350,500 Q500,420 700,360 Q900,420 1050,490 Q1200,520 1400,560 L1400,900 L0,900 Z"
+          fill="#3d6b4a" opacity="0.18"/>
+    <path d="M0,640 Q300,600 600,580 Q900,560 1400,620 L1400,900 L0,900 Z"
+          fill="#2d6e7e" opacity="0.15"/>
+    <!-- 바다 라인 -->
+    <path d="M0,720 Q350,705 700,720 T1400,720 L1400,900 L0,900 Z"
+          fill="#1a4a57" opacity="0.12"/>
+    <!-- 해 -->
+    <circle cx="1100" cy="200" r="60" fill="#f08a3e" opacity="0.25"/>
+    <circle cx="1100" cy="200" r="100" fill="#f08a3e" opacity="0.08"/>
+    <!-- 감귤들 -->
+    <circle cx="120" cy="180" r="16" fill="#f08a3e" opacity="0.4"/>
+    <circle cx="170" cy="220" r="12" fill="#d96a1c" opacity="0.35"/>
+    <circle cx="80" cy="260" r="14" fill="#f08a3e" opacity="0.3"/>
+    <circle cx="1280" cy="780" r="18" fill="#f08a3e" opacity="0.35"/>
+    <circle cx="1320" cy="820" r="13" fill="#d96a1c" opacity="0.4"/>
+    <!-- 갈매기 -->
+    <path d="M200,300 q10,-8 20,0 q10,-8 20,0" stroke="#1a2e2a" stroke-width="2" fill="none" opacity="0.4"/>
+    <path d="M280,250 q8,-6 16,0 q8,-6 16,0" stroke="#1a2e2a" stroke-width="2" fill="none" opacity="0.3"/>
+    <path d="M950,180 q10,-8 20,0 q10,-8 20,0" stroke="#1a2e2a" stroke-width="2" fill="none" opacity="0.35"/>
+  </svg>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<header>
+  <div class="kanji">Jeju · 濟州 · A Day in Tangerine Island</div>
+  <h1>제주의 <span class="accent">하루</span>를<br/>그려보세요</h1>
+  <div class="divider"><span class="line"></span><span class="dot"></span><span class="line"></span></div>
+  <p class="subtitle">바람과 돌, 바다가 흐르는 섬에서 보낼 여섯 번의 순간을 선택하세요</p>
+</header>
+
+<!-- 권역 선택 -->
+<section class="region-section">
+  <div class="section-label">— Step 1 · Choose Your Region —</div>
+  <div class="region-grid" id="regionGrid"></div>
+</section>
+
+<!-- 일정 카드 -->
+<section class="schedule-wrap" id="scheduleWrap">
+  <div class="section-label" style="margin-bottom:20px;">— Step 2 · Build Your Day —</div>
+</section>
+
+<!-- 결과 -->
+<section class="summary">
+  <div class="section-label">— Your Itinerary —</div>
+  <div class="summary-card">
+    <div class="summary-head">
+      <div class="summary-kanji">Final Itinerary · 旅程</div>
+      <div class="summary-title">나의 제주 하루</div>
+      <div class="summary-region" id="summaryRegion">— 권역을 먼저 선택해 주세요 —</div>
+    </div>
+    <div class="timeline" id="timeline">
+      <div class="summary-empty">아직 선택한 일정이 없습니다. 위에서 하나씩 골라보세요.</div>
+    </div>
+    <div class="summary-footer">
+      <div class="progress">선택 진행도 · <strong id="progressNum">0</strong>/6</div>
+      <button class="reset-btn" onclick="resetAll()">↻ Reset</button>
+    </div>
+  </div>
+</section>
+
+<footer>Made with 🍊 for a perfect Jeju day</footer>
+
+<script>
+// ===== 데이터 =====
+const regions = [
+  { id:'east',   name:'동부',   en:'East · 동쪽 해안',   desc:'성산일출봉 · 우도'},
+  { id:'west',   name:'서부',   en:'West · 서쪽 해안',   desc:'한림 · 협재'},
+  { id:'south',  name:'남부',   en:'South · 서귀포',     desc:'중문 · 서귀포'},
+  { id:'north',  name:'북부',   en:'North · 제주시',     desc:'제주시 · 애월'}
+];
+
+// 시간대: 식당(meal) / 방문지(visit)
+const timeSlots = [
+  { id:'morning',   name:'아침', en:'Morning',   icon:'01', type:'meal',  time:'07:30'},
+  { id:'forenoon',  name:'오전', en:'Forenoon',  icon:'02', type:'visit', time:'10:00'},
+  { id:'lunch',     name:'점심', en:'Lunch',     icon:'03', type:'meal',  time:'12:30'},
+  { id:'afternoon', name:'오후', en:'Afternoon', icon:'04', type:'visit', time:'15:00'},
+  { id:'dinner',    name:'저녁', en:'Dinner',    icon:'05', type:'meal',  time:'18:30'},
+  { id:'night',     name:'밤',   en:'Night',     icon:'06', type:'visit', time:'21:00'}
+];
+
+// 권역별 · 시간대별 옵션 데이터
+const data = {
+  east:{
+    morning:[
+      {name:'성산포 해녀의 집', desc:'전복죽 · 갈치국', meta:'Breakfast'},
+      {name:'우도 해담은쉼팡', desc:'성게미역국 정식', meta:'Breakfast'},
+      {name:'평대리 해녀촌', desc:'보말죽 한 그릇', meta:'Breakfast'},
+      {name:'세화 모닝커피', desc:'토스트 & 라떼', meta:'Breakfast'}
+    ],
+    forenoon:[
+      {name:'성산일출봉', desc:'유네스코 자연유산', meta:'Sunrise Peak'},
+      {name:'우도 산호해변', desc:'에메랄드빛 바다', meta:'Coral Beach'},
+      {name:'섭지코지', desc:'해안 절경 산책로', meta:'Coast Walk'},
+      {name:'비자림', desc:'천년의 비자나무 숲', meta:'Forest'}
+    ],
+    lunch:[
+      {name:'명진전복', desc:'전복돌솥밥', meta:'Lunch'},
+      {name:'고집돌우럭', desc:'우럭조림 정식', meta:'Lunch'},
+      {name:'표선해녀의집', desc:'성게비빔밥', meta:'Lunch'},
+      {name:'중앙해장', desc:'한치물회', meta:'Lunch'}
+    ],
+    afternoon:[
+      {name:'아쿠아플라넷 제주', desc:'대형 아쿠아리움', meta:'Aquarium'},
+      {name:'카페 글렌코', desc:'스코틀랜드풍 정원', meta:'Garden Cafe'},
+      {name:'월정리 해변', desc:'바람과 풍차의 해변', meta:'Beach'},
+      {name:'다랑쉬오름', desc:'오름의 여왕', meta:'Oreum'}
+    ],
+    dinner:[
+      {name:'한라산 아래 첫 마을', desc:'흑돼지 오겹살', meta:'Dinner'},
+      {name:'성산일출봉 횟집', desc:'모듬회 정식', meta:'Dinner'},
+      {name:'정성듬뿍 제주국수', desc:'고기국수', meta:'Dinner'},
+      {name:'표선 갈비밥상', desc:'근고기 구이', meta:'Dinner'}
+    ],
+    night:[
+      {name:'성산 광치기 해변', desc:'야간 별빛 산책', meta:'Stargazing'},
+      {name:'세화 야시장', desc:'벨롱장 야간 마켓', meta:'Night Market'},
+      {name:'우도 등대 야경', desc:'바다와 등대 불빛', meta:'Lighthouse'},
+      {name:'카페 마노르블랑', desc:'야간 정원 라이트업', meta:'Night Cafe'}
+    ]
+  },
+  west:{
+    morning:[
+      {name:'협재 모닝식당', desc:'성게미역국', meta:'Breakfast'},
+      {name:'한림 옹포리해장국', desc:'전복내장 해장국', meta:'Breakfast'},
+      {name:'카페 풍림다방', desc:'풍림 모닝세트', meta:'Breakfast'},
+      {name:'애월 그리운 바다', desc:'토스트 & 브런치', meta:'Breakfast'}
+    ],
+    forenoon:[
+      {name:'협재 해수욕장', desc:'에메랄드 바다', meta:'Beach'},
+      {name:'한림공원', desc:'야자수와 분재', meta:'Park'},
+      {name:'금능 해수욕장', desc:'얕은 바다 산책', meta:'Beach'},
+      {name:'수월봉', desc:'화산 지질공원', meta:'Geopark'}
+    ],
+    lunch:[
+      {name:'협재수우동', desc:'성게 우동', meta:'Lunch'},
+      {name:'산방식당', desc:'밀냉면 정식', meta:'Lunch'},
+      {name:'옹포해녀촌', desc:'한치회덮밥', meta:'Lunch'},
+      {name:'한림칼국수', desc:'보말칼국수', meta:'Lunch'}
+    ],
+    afternoon:[
+      {name:'산방산 & 용머리해안', desc:'화산암 절벽', meta:'Cliff Walk'},
+      {name:'오설록 티 뮤지엄', desc:'녹차밭 산책', meta:'Tea Museum'},
+      {name:'본태박물관', desc:'안도 타다오 건축', meta:'Museum'},
+      {name:'새별오름', desc:'억새 평원 오름', meta:'Oreum'}
+    ],
+    dinner:[
+      {name:'덕성원', desc:'중화풍 흑돼지', meta:'Dinner'},
+      {name:'한림 칠돈가', desc:'흑돼지 근고기', meta:'Dinner'},
+      {name:'협재 바다횟집', desc:'모듬 활어회', meta:'Dinner'},
+      {name:'한담 해안가 식당', desc:'딱새우 라면', meta:'Dinner'}
+    ],
+    night:[
+      {name:'애월 한담 해안산책로', desc:'야간 해안 산책', meta:'Night Walk'},
+      {name:'카페 봄날', desc:'오션뷰 야간 카페', meta:'Ocean Cafe'},
+      {name:'협재 노을 광장', desc:'노을 후 별빛', meta:'Sunset'},
+      {name:'금악 새별오름', desc:'억새 사이 야경', meta:'Oreum Night'}
+    ]
+  },
+  south:{
+    morning:[
+      {name:'서귀포 매일올레시장', desc:'전복죽 아침', meta:'Breakfast'},
+      {name:'중문 본태식당', desc:'고등어구이 백반', meta:'Breakfast'},
+      {name:'우진해장국', desc:'고사리 해장국', meta:'Breakfast'},
+      {name:'카페 베케', desc:'정원 브런치', meta:'Breakfast'}
+    ],
+    forenoon:[
+      {name:'천지연 폭포', desc:'서귀포의 보석', meta:'Waterfall'},
+      {name:'정방폭포', desc:'바다로 떨어지는 폭포', meta:'Waterfall'},
+      {name:'외돌개', desc:'기암 해안 절경', meta:'Sea Stack'},
+      {name:'주상절리대', desc:'육각 기둥 절벽', meta:'Cliff'}
+    ],
+    lunch:[
+      {name:'서귀포 진주식당', desc:'갈치조림', meta:'Lunch'},
+      {name:'천짓골식당', desc:'돔베고기 정식', meta:'Lunch'},
+      {name:'중문 색달식당', desc:'갈치국', meta:'Lunch'},
+      {name:'네거리식당', desc:'옥돔구이 백반', meta:'Lunch'}
+    ],
+    afternoon:[
+      {name:'중문 색달 해변', desc:'서핑과 모래사장', meta:'Beach'},
+      {name:'카멜리아 힐', desc:'동백 정원', meta:'Garden'},
+      {name:'쇠소깍', desc:'테우 타기 체험', meta:'River'},
+      {name:'헬로키티 아일랜드', desc:'테마 박물관', meta:'Theme'}
+    ],
+    dinner:[
+      {name:'서귀포 부두식당', desc:'활어회 한 상', meta:'Dinner'},
+      {name:'중문 흑돼지 거리', desc:'근고기 BBQ', meta:'Dinner'},
+      {name:'올래국수', desc:'고기국수 본점', meta:'Dinner'},
+      {name:'덕수리 메밀집', desc:'메밀국수 정식', meta:'Dinner'}
+    ],
+    night:[
+      {name:'이중섭 거리', desc:'야간 갤러리 산책', meta:'Art Street'},
+      {name:'서귀포 칠십리야경', desc:'다리 위 야경', meta:'Bridge'},
+      {name:'천지연 야간개장', desc:'폭포 야간 조명', meta:'Waterfall Night'},
+      {name:'중문 하얏트 라운지', desc:'야경 칵테일 바', meta:'Lounge'}
+    ]
+  },
+  north:{
+    morning:[
+      {name:'올래국수 아침', desc:'고기국수 한 그릇', meta:'Breakfast'},
+      {name:'우진해장국 본점', desc:'고사리 육개장', meta:'Breakfast'},
+      {name:'동문시장 분식', desc:'호떡과 어묵', meta:'Breakfast'},
+      {name:'카페 그곶', desc:'베이커리 브런치', meta:'Breakfast'}
+    ],
+    forenoon:[
+      {name:'한라수목원', desc:'아침 숲 산책', meta:'Forest'},
+      {name:'사라봉 공원', desc:'제주항 전망', meta:'Park'},
+      {name:'용두암', desc:'용머리 바위', meta:'Rock'},
+      {name:'관덕정 · 목관아', desc:'제주 옛 관아', meta:'Heritage'}
+    ],
+    lunch:[
+      {name:'돈사돈', desc:'흑돼지 근고기', meta:'Lunch'},
+      {name:'자매국수', desc:'고기국수', meta:'Lunch'},
+      {name:'미풍해장국', desc:'성게 해장국', meta:'Lunch'},
+      {name:'앞뱅디 식당', desc:'각재기국 정식', meta:'Lunch'}
+    ],
+    afternoon:[
+      {name:'동문시장 산책', desc:'전통시장 먹거리', meta:'Market'},
+      {name:'애월 한담해안', desc:'카페거리 산책', meta:'Coast Cafe'},
+      {name:'아라리오 뮤지엄', desc:'현대미술 공간', meta:'Art'},
+      {name:'노형슈퍼마켙', desc:'레트로 카페', meta:'Cafe'}
+    ],
+    dinner:[
+      {name:'관전동 흑돼지', desc:'오겹살 정찬', meta:'Dinner'},
+      {name:'제주순옥이네 명가', desc:'갈치조림', meta:'Dinner'},
+      {name:'문나이트 횟집', desc:'활어회 한 상', meta:'Dinner'},
+      {name:'섬돼지', desc:'근고기 BBQ', meta:'Dinner'}
+    ],
+    night:[
+      {name:'탑동 해변로 야경', desc:'야간 해안 산책', meta:'Night Walk'},
+      {name:'동문 야시장', desc:'야간 길거리 음식', meta:'Night Market'},
+      {name:'사라봉 야경', desc:'제주시 시내 전망', meta:'Viewpoint'},
+      {name:'애월 카페거리', desc:'야간 오션뷰 카페', meta:'Night Cafe'}
+    ]
+  }
+};
+
+// ===== 상태 =====
+let selectedRegion = null;
+const selections = {}; // {morning:idx, forenoon:idx, ...}
+
+// ===== 렌더 =====
+function renderRegions(){
+  const grid = document.getElementById('regionGrid');
+  grid.innerHTML = regions.map((r,i)=>`
+    <button class="region-btn ${selectedRegion===r.id?'active':''}" data-id="${r.id}">
+      <span class="region-num">No. 0${i+1}</span>
+      <div class="region-name">${r.name}</div>
+      <div class="region-en">${r.en}</div>
+    </button>
+  `).join('');
+  grid.querySelectorAll('.region-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id;
+      if(selectedRegion!==id){
+        selectedRegion = id;
+        // 권역 변경 시 선택 초기화
+        Object.keys(selections).forEach(k=>delete selections[k]);
+      }
+      renderAll();
+    });
+  });
+}
+
+function renderSchedule(){
+  const wrap = document.getElementById('scheduleWrap');
+  // 기존 카드 제거 (label 제외)
+  wrap.querySelectorAll('.time-card').forEach(c=>c.remove());
+
+  timeSlots.forEach(slot=>{
+    const card = document.createElement('div');
+    card.className = 'time-card' + (selectedRegion?'':' disabled');
+    const opts = selectedRegion ? data[selectedRegion][slot.id] : [];
+    const tagClass = slot.type==='meal' ? 'meal' : 'visit';
+    const tagText = slot.type==='meal' ? '식당 · Meal' : '방문지 · Visit';
+
+    card.innerHTML = `
+      <div class="time-header">
+        <div class="time-title">
+          <span class="time-num">${slot.icon}</span>
+          <div>
+            <div class="time-name">${slot.name} <span style="font-size:13px; color:var(--stone); font-weight:400; margin-left:6px;">${slot.time}</span></div>
+            <div class="time-en">${slot.en}</div>
+          </div>
+        </div>
+        <span class="time-tag ${tagClass}">${tagText}</span>
+      </div>
+      ${selectedRegion ? `
+        <div class="options">
+          ${opts.map((o,i)=>`
+            <button class="option ${selections[slot.id]===i?'selected':''}" data-slot="${slot.id}" data-idx="${i}">
+              <div class="opt-meta">${o.meta}</div>
+              <div class="opt-name">${o.name}</div>
+              <div class="opt-desc">${o.desc}</div>
+            </button>
+          `).join('')}
+        </div>
+      ` : `<div class="empty-note">먼저 권역을 선택해 주세요</div>`}
+    `;
+    wrap.appendChild(card);
+  });
+
+  wrap.querySelectorAll('.option').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const slot = btn.dataset.slot;
+      const idx = parseInt(btn.dataset.idx);
+      selections[slot] = (selections[slot]===idx) ? undefined : idx;
+      if(selections[slot]===undefined) delete selections[slot];
+      renderSchedule();
+      renderSummary();
+    });
+  });
+}
+
+function renderSummary(){
+  const region = regions.find(r=>r.id===selectedRegion);
+  document.getElementById('summaryRegion').textContent =
+    region ? `Region · ${region.name} (${region.en})` : '— 권역을 먼저 선택해 주세요 —';
+
+  const tl = document.getElementById('timeline');
+  const count = Object.keys(selections).length;
+  document.getElementById('progressNum').textContent = count;
+
+  if(!selectedRegion || count===0){
+    tl.innerHTML = `<div class="summary-empty">아직 선택한 일정이 없습니다. 위에서 하나씩 골라보세요.</div>`;
+    return;
+  }
+
+  tl.innerHTML = timeSlots.map(slot=>{
+    const idx = selections[slot.id];
+    if(idx===undefined) return '';
+    const opt = data[selectedRegion][slot.id][idx];
+    const tagText = slot.type==='meal' ? 'Meal' : 'Visit';
+    return `
+      <div class="tl-item">
+        <div class="tl-time">${slot.time}</div>
+        <div class="tl-content">
+          <div class="tl-name">${slot.name} · ${opt.name}</div>
+          <div class="tl-desc">${opt.desc}</div>
+        </div>
+        <span class="tl-tag">${tagText}</span>
+      </div>
+    `;
+  }).join('') || `<div class="summary-empty">아직 선택한 일정이 없습니다.</div>`;
+}
+
+function resetAll(){
+  selectedRegion = null;
+  Object.keys(selections).forEach(k=>delete selections[k]);
+  renderAll();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function renderAll(){
+  renderRegions();
+  renderSchedule();
+  renderSummary();
+}
+
+renderAll();
+</script>
+</body>
+</html>
